@@ -287,6 +287,22 @@ def get_evaluation_bboxes(
     box_format="midpoint",
     device="cuda",
 ):
+    """
+    get prediction boxex and true boxes for evaluation
+
+    Input:
+    - loader: obj, dataloader
+    - model: obj, model
+    - iou_threshold: float, threshold for nms iou
+    - anchors: list, anchors
+    - threshold: float, threshold for confidence
+    - box_format: str, "midpoint" or "corners"
+    - device: str, "cuda" or "cpu"
+
+    Output:
+    - all_pred_boxes: list, [[train_idx, class_pred, prob_score, x1, y1, x2, y2], ...]
+    - all_true_boxes: list, [[train_idx, class_label, x1, y1, x2, y2], ...]
+    """
     # make sure model is in eval before get bboxes
     model.eval()
     train_idx = 0
@@ -298,6 +314,7 @@ def get_evaluation_bboxes(
         with torch.no_grad():
             predictions = model(x)
 
+        # collect all prediction box and true box of 3 scales
         batch_size = x.shape[0]
         bboxes = [[] for _ in range(batch_size)]
         for i in range(3):
@@ -314,6 +331,7 @@ def get_evaluation_bboxes(
             labels[2], anchor, S=S, is_preds=False
         )
 
+        # loop through all the prediction boxes and true boxes
         for idx in range(batch_size):
             nms_boxes = non_max_suppression(
                 bboxes[idx],
@@ -339,7 +357,8 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
     """
     Scales the predictions coming from the model to
     be relative to the entire image such that they for example later
-    can be plotted or.
+    can be plotted or. 
+    image ratio to cell ratio
     INPUT:
     predictions: tensor of size (N, 3, S, S, num_classes+5)
     anchors: the anchors used for the predictions
@@ -368,7 +387,7 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
         .unsqueeze(-1)
         .to(predictions.device)
     )
-    print(cell_indices)
+    # print(cell_indices)
     # add cell index to the x and y coordinates, predictions are relative to the cell
     x = 1 / S * (box_predictions[..., 0:1] + cell_indices)
     y = 1 / S * (box_predictions[..., 1:2] + cell_indices.permute(0, 1, 3, 2, 4))
@@ -377,6 +396,20 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
     return converted_bboxes.tolist()
 
 def check_class_accuracy(model, loader, threshold):
+    """
+    check class accuracy, object accuracy and no object accuracy
+
+    Input:
+    - model: obj, model
+    - loader: obj, dataloader
+    - threshold: float, threshold for confidence
+
+    Output:
+    - class_acc: float, class accuracy
+    - obj_acc: float, object accuracy
+    - noobj_acc: float, no object accuracy
+
+    """
     model.eval()
     tot_class_preds, correct_class = 0, 0
     tot_noobj, correct_noobj = 0, 0
@@ -501,10 +534,20 @@ def get_loaders(train_csv_path, test_csv_path):
 
     return train_loader, test_loader, train_eval_loader
 
-def plot_couple_examples(model, loader, thresh, iou_thresh, anchors):
+def plot_couple_examples(model, loader, thresh, iou_thresh, anchors, device):
+    """
+    Plot couple examples to see how good our model is
+
+    Input:
+    - model: model to evaluate
+    - loader: dataloader for examples
+    - thresh: threshold for objectness score
+    - iou_thresh: threshold for IoU score for NMS
+    - anchors: anchors for model
+    """
     model.eval()
     x, y = next(iter(loader))
-    x = x.to("cuda")
+    x = x.to(device)
     with torch.no_grad():
         out = model(x)
         bboxes = [[] for _ in range(x.shape[0])]
