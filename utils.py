@@ -358,7 +358,9 @@ def cells_to_bboxes(predictions, anchors, S, is_preds=True):
     Scales the predictions coming from the model to
     be relative to the entire image such that they for example later
     can be plotted or. 
-    image ratio to cell ratio
+    => x,y from cell ratio to image ratio, considering the index of the location of the cell
+    => w,h from anchor ratio to image ratio, considering the size of the anchor, w = 1.5 = 1.5 cell size
+
     INPUT:
     predictions: tensor of size (N, 3, S, S, num_classes+5)
     anchors: the anchors used for the predictions
