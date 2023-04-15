@@ -1,10 +1,13 @@
 import config
 import torch
+import copy 
+from datetime import datetime
 
 from utils import (
     mean_average_precision,
     get_evaluation_bboxes,
-    check_class_accuracy
+    check_class_accuracy,
+    save_checkpoint
 )
 from tqdm import tqdm
 import warnings
@@ -26,8 +29,11 @@ def train_fn(train_loader, test_loader, model, optimizer, loss_fn, scaler, scale
     - scaled_anchors: tensor, shape (3, 3, 2)
 
     """
+    map = 0
+    best_model_wt = copy.deepcopy(model.state_dict())
     for epoch in range(config.NUM_EPOCHS):
-        #plot_couple_examples(model, test_loader, 0.6, 0.5, scaled_anchors)
+
+        print('Epoch {}/{}'.format(epoch, config.NUM_EPOCHS - 1))
         
         loop = tqdm(train_loader, leave=True)
         losses = []
@@ -60,7 +66,7 @@ def train_fn(train_loader, test_loader, model, optimizer, loss_fn, scaler, scale
             mean_loss = sum(losses) / len(losses)
             loop.set_postfix(loss=mean_loss)
 
-        if epoch > 0 and epoch % 3 == 0:
+        if epoch > 0 and epoch % 4 == 0:
             check_class_accuracy(model, test_loader, threshold=config.CONF_THRESHOLD)
             pred_boxes, true_boxes = get_evaluation_bboxes(
                 test_loader,
@@ -68,6 +74,7 @@ def train_fn(train_loader, test_loader, model, optimizer, loss_fn, scaler, scale
                 iou_threshold=config.NMS_IOU_THRESH,
                 anchors=config.ANCHORS,
                 threshold=config.CONF_THRESHOLD,
+                device=config.DEVICE,
             )
             mapval = mean_average_precision(
                 pred_boxes,
@@ -76,5 +83,15 @@ def train_fn(train_loader, test_loader, model, optimizer, loss_fn, scaler, scale
                 box_format="midpoint",
                 num_classes=config.NUM_CLASSES,
             )
-            print(f"MAP: {mapval.item()}")
+            cur_map = mapval.item()
+            print(f"MAP: {cur_map}")
+            if cur_map > map:
+                best_model_wt = copy.deepcopy(model.state_dict())
+                map = cur_map
+                save_checkpoint(model, optimizer, filename=config.CHECKPOINT_FILE)
             model.train()
+    
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    model.load_state_dict(best_model_wt)
+    torch.save(model, "tuned_model/yolov3-" + current_time + ".pth")
