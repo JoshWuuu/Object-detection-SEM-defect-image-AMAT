@@ -13746,3 +13746,5 @@ venv/lib/python3.7/site-packages/urllib3/util/wait.py
 venv/pyvenv.cfg
 defect_image/.DS_Store
 *.pyc
+*.pth
+*.tar
