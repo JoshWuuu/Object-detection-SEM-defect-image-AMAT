@@ -27,7 +27,7 @@ def main():
     )
     train_loader, test_loader, _ = get_loaders(
         train_csv_path=config.DATASET + "/train.csv",
-        test_csv_path=config.DATAAZSET + "/test.csv",
+        test_csv_path=config.DATASET + "/test.csv",
     )
 
     # load model if specified
@@ -52,7 +52,7 @@ def main():
     # plot examples from test set
     plot_couple_examples(
         model, test_loader, config.CONF_THRESHOLD,
-        config.NMS_IOU_THRESH, config.ANCHORS, config.DEVICE
+        config.NMS_IOU_THRESH, scaled_anchors, config.DEVICE
     )
 
 if __name__ == '__main__':
