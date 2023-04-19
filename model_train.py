@@ -66,7 +66,7 @@ def train_fn(train_loader, test_loader, model, optimizer, loss_fn, scaler, scale
             mean_loss = sum(losses) / len(losses)
             loop.set_postfix(loss=mean_loss)
 
-        if epoch > 0 and epoch % 4 == 0:
+        if epoch > 0 and epoch % 10 == 0:
             check_class_accuracy(model, test_loader, threshold=config.CONF_THRESHOLD)
             pred_boxes, true_boxes = get_evaluation_bboxes(
                 test_loader,
@@ -90,8 +90,10 @@ def train_fn(train_loader, test_loader, model, optimizer, loss_fn, scaler, scale
                 map = cur_map
                 save_checkpoint(model, optimizer, filename=config.CHECKPOINT_FILE)
             model.train()
-    
+
+        torch.cuda.empty_cache()
+
     now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
+    current_time = now.strftime("%H%M%S")
     model.load_state_dict(best_model_wt)
     torch.save(model, "tuned_model/yolov3-" + current_time + ".pth")
