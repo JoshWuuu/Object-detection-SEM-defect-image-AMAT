@@ -4,7 +4,7 @@ It is a side project in 2023. The project is a Computer Vision topic. The langua
 ## Data
 AMAT SEM image, **private**
 ## Network
-YoLov3. The network output three scale predictions (IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8). Each prediction is a grid prediction. The cell in the grid has 3 * (num_classes + 5) outputs, 3 is the number of anchor boxes, 5 is (objectness, x, y, w, h). The anchor box is predined using the images in ImageNet.
+YoLov3. The network output three scale predictions (IMAGE_SIZE // 32, IMAGE_SIZE // 16, IMAGE_SIZE // 8). Each prediction is a grid prediction. The cell in the grid has 3 * (num_classes + 5) outputs, 3 is the number of anchor boxes, 5 is (objectness, x, y, w, h). The anchor box is predefined using the images in ImageNet.
 <figure>
 
   <img 
